@@ -1,0 +1,27 @@
+﻿<div class="alert @AlertClass mt-4" role="alert">
+    <span class="oi oi-pencil me-2" aria-hidden="true"></span>
+    <strong>@Title</strong>
+
+    <span class="text-nowrap">
+        Please take our
+        <a target="_blank" class="font-weight-bold link-dark" href="@SurveyLink">brief survey</a>
+    </span>
+    and tell us what you think.
+</div>
+
+@code {
+    // Demonstrates how a parent component can supply parameters
+    [Parameter]
+    public string? Title { get; set; }
+
+    // Parameter for the survey link
+    [Parameter]
+    public string SurveyLink { get; set; } = "https://go.microsoft.com/fwlink/?linkid=2186157";
+
+    // Parameter for alert type (e.g., "alert-secondary", "alert-success", "alert-danger")
+    [Parameter]
+    public string AlertType { get; set; } = "alert-secondary";
+
+    // CSS class for the alert based on the AlertType parameter
+    private string AlertClass => AlertType;
+}

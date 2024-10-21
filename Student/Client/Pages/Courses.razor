@@ -1,0 +1,119 @@
+﻿@page "/courses"
+@using Student.Client.Services
+@using Student.Shared
+@inject CourseService CourseService
+
+<h3 class="mb-4">Courses</h3>
+
+@if (courses == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Id</th>
+                <th>Course Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var course in courses)
+            {
+                <tr>
+                    <td>@course.Id</td>
+                    <td>@course.Name</td>
+                    <td>@course.Description</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" @onclick="() => LoadCourseForEdit(course)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteCourse(course.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h4 class="mt-4">@((isEditMode ? "Edit Course" : "Add Course"))</h4>
+    <EditForm Model="courseModel" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="CourseName" class="form-label">Course Name:</label>
+            <InputText id="CourseName" @bind-Value="courseModel.Name" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="Description" class="form-label">Description:</label>
+            <InputText id="Description" @bind-Value="courseModel.Description" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">@((isEditMode) ? "Update" : "Add")</button>
+        @if (isEditMode)
+        {
+            <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+        }
+    </EditForm>
+}
+
+@code {
+    private List<CourseModel> courses = new();
+    private CourseModel courseModel = new();
+    private bool isEditMode = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCoursesAsync();
+    }
+
+    private async Task LoadCoursesAsync()
+    {
+        courses = await CourseService.GetCoursesAsync();
+    }
+
+    private async Task DeleteCourse(int id)
+    {
+        await CourseService.DeleteCourseAsync(id);
+        await LoadCoursesAsync(); // Refresh the list after deletion
+    }
+
+    private void LoadCourseForEdit(CourseModel course)
+    {
+        courseModel = new CourseModel
+            {
+                Id = course.Id,
+                Name = course.Name,
+                Description = course.Description
+            };
+        isEditMode = true;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (isEditMode)
+        {
+            await CourseService.UpdateCourseAsync(courseModel.Id, courseModel);
+        }
+        else
+        {
+            await CourseService.AddCourseAsync(courseModel);
+        }
+
+        await LoadCoursesAsync(); // Refresh the list after adding or updating
+        ResetForm();
+    }
+
+    private void CancelEdit()
+    {
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        courseModel = new CourseModel();
+        isEditMode = false;
+    }
+}

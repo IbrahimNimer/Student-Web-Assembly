@@ -1,0 +1,129 @@
+﻿@page "/students"
+@using Services
+@using Student.Shared
+@inject StudentService StudentService
+
+<h3>Students</h3>
+
+@if (students == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var student in students)
+            {
+                <tr>
+                    <td>@student.Id</td>
+                    <td>@student.Name</td>
+                    <td>@student.Address</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => LoadStudentForEdit(student)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteStudent(student.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h4>@(isEditMode ? "Edit Student" : "Add Student")</h4>
+    <EditForm Model="studentModel" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="Name">Name:</label>
+            <InputText id="Name" @bind-Value="studentModel.Name" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="Address">Address:</label>
+            <InputText id="Address" @bind-Value="studentModel.Address" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">@((isEditMode) ? "Update" : "Add")</button>
+        @if (isEditMode)
+        {
+            <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+        }
+    </EditForm>
+
+    @if (message != null)
+    {
+        <div class="alert alert-info mt-3">@message</div>
+    }
+}
+
+@code {
+    private List<StudentModel> students;
+    private StudentModel studentModel = new();
+    private bool isEditMode = false;
+    private string message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudentsAsync();
+    }
+
+    private async Task LoadStudentsAsync()
+    {
+        students = await StudentService.GetStudentsAsync();
+    }
+
+    private async Task DeleteStudent(int id)
+    {
+        await StudentService.DeleteStudentAsync(id);
+        await LoadStudentsAsync(); // Refresh the list after deletion
+        message = "Student deleted successfully.";
+    }
+
+    private void LoadStudentForEdit(StudentModel student)
+    {
+        studentModel = new StudentModel
+            {
+                Id = student.Id,
+                Name = student.Name,
+                Address = student.Address
+            };
+        isEditMode = true;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (isEditMode)
+        {
+            await StudentService.UpdateStudentAsync(studentModel.Id, studentModel);
+            message = "Student updated successfully.";
+        }
+        else
+        {
+            await StudentService.AddStudentAsync(studentModel);
+            message = "Student added successfully.";
+        }
+
+        await LoadStudentsAsync(); // Refresh the list after adding/updating
+        ResetForm();
+    }
+
+    private void CancelEdit()
+    {
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        studentModel = new StudentModel();
+        isEditMode = false;
+        message = null; // Clear any previous messages
+    }
+}

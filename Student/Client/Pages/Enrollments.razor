@@ -1,0 +1,113 @@
+﻿@page "/enrollments"
+@using Student.Client.Services
+@using Student.Shared
+@inject EnrollmentService EnrollmentService
+@inject CourseService CourseService
+@inject StudentService StudentService
+
+<h3 class="mb-4">Enrollments</h3>
+
+@if (enrollments == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Id</th>
+                <th>Student</th>
+                <th>Course</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var enrollment in enrollments)
+            {
+                var studentName = GetStudentName(enrollment.StudentId);
+                var courseName = GetCourseName(enrollment.CourseId);
+
+                <tr>
+                    <td>@enrollment.Id</td>
+                    <td>@studentName</td>
+                    <td>@courseName</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteEnrollment(enrollment.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h4 class="mt-4">Add Enrollment</h4>
+    <EditForm Model="enrollmentModel" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="StudentId" class="form-label">Student:</label>
+            <InputSelect id="StudentId" @bind-Value="enrollmentModel.StudentId" class="form-select" required>
+                <option value="">Select a student</option>
+                @foreach (var student in students)
+                {
+                    <option value="@student.Id">@student.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="CourseId" class="form-label">Course:</label>
+            <InputSelect id="CourseId" @bind-Value="enrollmentModel.CourseId" class="form-select" required>
+                <option value="">Select a course</option>
+                @foreach (var course in courses)
+                {
+                    <option value="@course.Id">@course.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Enroll</button>
+    </EditForm>
+}
+
+@code {
+    private List<EnrollmentModel> enrollments;
+    private List<StudentModel> students;
+    private List<CourseModel> courses;
+    private EnrollmentModel enrollmentModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        enrollments = await EnrollmentService.GetEnrollmentsAsync();
+        students = await StudentService.GetStudentsAsync();
+        courses = await CourseService.GetCoursesAsync();
+    }
+
+    private async Task DeleteEnrollment(int id)
+    {
+        await EnrollmentService.DeleteEnrollmentAsync(id);
+        enrollments = await EnrollmentService.GetEnrollmentsAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await EnrollmentService.AddEnrollmentAsync(enrollmentModel);
+        enrollments = await EnrollmentService.GetEnrollmentsAsync();
+        enrollmentModel = new EnrollmentModel();
+    }
+
+    // Helper method to get student name by ID
+    private string GetStudentName(int studentId)
+    {
+        var student = students.FirstOrDefault(s => s.Id == studentId);
+        return student != null ? student.Name : "Unknown Student";
+    }
+
+    // Helper method to get course name by ID
+    private string GetCourseName(int courseId)
+    {
+        var course = courses.FirstOrDefault(c => c.Id == courseId);
+        return course != null ? course.Name : "Unknown Course";
+    }
+}
