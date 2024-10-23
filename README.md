@@ -12,7 +12,7 @@ Welcome to the **Student Web Assembly** project! This application is designed to
 ## Technologies Used
 
 - **Frontend**: Blazor WebAssembly
-- **Backend**: ASP.NET Core Web API (if applicable)
+- **Backend**: ASP.NET Core Web API 
 - **Database**:MSSQL 
 - **Styling**: Bootstrap for responsive design
 
